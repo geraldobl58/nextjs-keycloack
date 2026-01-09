@@ -5,10 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "rm -rf out && next dev",
-    "dev:theme": "node scripts/watch-theme.js",
+    "dev:theme": "cd .. && npm run watch:default",
     "build": "next build",
-    "build:theme": "next build && node scripts/build-theme.js",
-    "watch": "node scripts/watch-theme.js",
+    "build:theme": "cd .. && npm run convert:default",
     "start": "next start",
     "lint": "next lint"
   },

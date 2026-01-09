@@ -38,10 +38,10 @@ export default function LoginForm() {
             </svg>
           </div>
 
-          {/* <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-3xl font-bold text-white mb-2">
             🚀 Welcome Back!
           </h1>
-          <p className="text-slate-400">Sign in to continue to your account</p> */}
+          <p className="text-slate-400">Sign in to continue to your account</p>
 
           {/* Badges */}
           <div className="flex justify-center gap-3 mt-4 flex-wrap">

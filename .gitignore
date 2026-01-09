@@ -10,8 +10,6 @@
 **/.next/
 **/out/
 
-# Temas compilados (gerados automaticamente)
-themes/*/
 
 # OS
 .DS_Store

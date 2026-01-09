@@ -1,0 +1,20 @@
+{
+  "name": "keycloak-themes",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Temas Keycloak customizados com Next.js + Tailwind CSS",
+  "scripts": {
+    "convert": "node scripts/convert-theme.js",
+    "convert:default": "node scripts/convert-theme.js nextjs-keycloak-theme custom-theme",
+    "watch": "node scripts/watch-theme.js",
+    "watch:default": "node scripts/watch-theme.js nextjs-keycloak-theme custom-theme"
+  },
+  "keywords": [
+    "keycloak",
+    "theme",
+    "nextjs",
+    "tailwind"
+  ],
+  "license": "MIT"
+}
