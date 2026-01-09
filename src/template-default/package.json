@@ -1,0 +1,31 @@
+{
+  "name": "nextjs-keycloak-theme",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "rm -rf out && next dev",
+    "dev:theme": "cd ../.. && npm run watch nextjs-keycloak-theme custom-theme",
+    "build": "next build",
+    "build:theme": "cd ../.. && npm run convert nextjs-keycloak-theme custom-theme",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.3",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9",
+    "eslint-config-next": "^15.1.6",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5"
+  }
+}

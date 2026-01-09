@@ -6,11 +6,13 @@
  * Converte um projeto Next.js em tema Keycloak.
  *
  * Uso:
- *   node scripts/convert-theme.js <pasta-do-tema-nextjs> [nome-do-tema]
+ *   node scripts/convert-theme.js <nome-do-tema> [nome-output]
+ *
+ * Os temas devem estar na pasta src/
  *
  * Exemplo:
  *   node scripts/convert-theme.js nextjs-keycloak-theme custom-theme
- *   node scripts/convert-theme.js my-new-theme my-new-theme
+ *   node scripts/convert-theme.js my-new-theme
  */
 
 import fs from "fs";
@@ -25,6 +27,7 @@ const __dirname = path.dirname(__filename);
 // CONFIGURAÇÕES
 // ==========================================
 const ROOT_DIR = path.resolve(__dirname, "..");
+const SRC_DIR = path.join(ROOT_DIR, "src");
 const THEMES_OUTPUT_DIR = path.join(ROOT_DIR, "themes");
 const LOCALES = ["en", "pt_BR"];
 
@@ -38,6 +41,7 @@ const colors = {
   blue: "\x1b[34m",
   red: "\x1b[31m",
   cyan: "\x1b[36m",
+  magenta: "\x1b[35m",
 };
 
 function log(message, color = "reset") {
@@ -48,6 +52,24 @@ function ensureDir(dir) {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
+}
+
+/**
+ * Busca arquivos CSS recursivamente em um diretório
+ */
+function findCssFiles(dir, files = []) {
+  if (!fs.existsSync(dir)) return files;
+
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      findCssFiles(fullPath, files);
+    } else if (entry.name.endsWith(".css")) {
+      files.push(fullPath);
+    }
+  }
+  return files;
 }
 
 // ==========================================
@@ -126,25 +148,43 @@ function extractHtmlFromNextBuild(outDir) {
 // EXTRAÇÃO DO CSS DO NEXT.JS
 // ==========================================
 function extractCssFromNextBuild(outDir) {
-  const cssDir = path.join(outDir, "_next", "static", "css");
-
-  if (!fs.existsSync(cssDir)) {
-    throw new Error(`Diretório CSS não encontrado em ${cssDir}`);
-  }
-
-  const cssFiles = fs.readdirSync(cssDir).filter((f) => f.endsWith(".css"));
-
-  if (cssFiles.length === 0) {
-    throw new Error("Nenhum arquivo CSS encontrado.");
-  }
-
   let combinedCSS = "";
-  for (const file of cssFiles) {
-    const content = fs.readFileSync(path.join(cssDir, file), "utf-8");
-    combinedCSS += content + "\n";
+
+  // Tenta buscar CSS em arquivos
+  const staticDir = path.join(outDir, "_next", "static");
+  const cssFiles = findCssFiles(staticDir);
+
+  if (cssFiles.length > 0) {
+    for (const file of cssFiles) {
+      const content = fs.readFileSync(file, "utf-8");
+      combinedCSS += content + "\n";
+    }
+    log(`✓ Extraídos ${cssFiles.length} arquivo(s) CSS`, "green");
   }
 
-  log(`✓ Extraídos ${cssFiles.length} arquivo(s) CSS`, "green");
+  // Também extrai CSS inline do HTML (Next.js 16+ pode usar inline)
+  const indexPath = path.join(outDir, "index.html");
+  if (fs.existsSync(indexPath)) {
+    const html = fs.readFileSync(indexPath, "utf-8");
+    const styleMatches = html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi);
+
+    let inlineCount = 0;
+    for (const match of styleMatches) {
+      if (match[1] && match[1].trim()) {
+        combinedCSS += "\n/* Inline CSS */\n" + match[1] + "\n";
+        inlineCount++;
+      }
+    }
+
+    if (inlineCount > 0) {
+      log(`✓ Extraídos ${inlineCount} bloco(s) de CSS inline`, "green");
+    }
+  }
+
+  if (!combinedCSS.trim()) {
+    log("⚠️  Nenhum CSS encontrado, usando apenas Tailwind classes", "yellow");
+  }
+
   return combinedCSS;
 }
 
@@ -387,7 +427,7 @@ function generateMessages(locale) {
     password: isPortuguese ? "Senha" : "Password",
     usernameOrEmail: isPortuguese ? "Usuário ou Email" : "Username or Email",
     rememberMe: isPortuguese ? "Lembrar de mim" : "Remember me",
-    noAccount: isPortuguese ? "Não tem uma conta?" : "Don't have an account?",
+    noAccount: isPortuguese ? "Não tem uma conta?" : "No account?",
     invalidUserMessage: isPortuguese
       ? "Usuário ou senha inválidos."
       : "Invalid username or password.",
@@ -406,31 +446,51 @@ function generateMessages(locale) {
 async function main() {
   const args = process.argv.slice(2);
 
+  console.log(`
+${colors.magenta}╔══════════════════════════════════════════════════╗
+║       🎨 Keycloak Theme Converter                ║
+╚══════════════════════════════════════════════════╝${colors.reset}
+`);
+
   if (args.length === 0) {
-    log("\n❌ Erro: Pasta do tema é obrigatória\n", "red");
+    // Lista temas disponíveis
     log(
-      "Uso: node scripts/convert-theme.js <pasta-do-tema> [nome-do-tema]",
+      "Uso: node scripts/convert-theme.js <nome-do-tema> [nome-output]\n",
       "yellow"
     );
+
+    if (fs.existsSync(SRC_DIR)) {
+      const themes = fs
+        .readdirSync(SRC_DIR, { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name);
+
+      if (themes.length > 0) {
+        log("📂 Temas disponíveis em src/:", "cyan");
+        themes.forEach((t) => log(`   • ${t}`, "reset"));
+      }
+    }
+
     log("\nExemplo:", "cyan");
     log(
       "  node scripts/convert-theme.js nextjs-keycloak-theme custom-theme",
       "reset"
     );
-    log("  node scripts/convert-theme.js my-theme\n", "reset");
+    log("  node scripts/convert-theme.js my-new-theme\n", "reset");
     process.exit(1);
   }
 
-  const themeSourceDir = args[0];
-  const themeName = args[1] || themeSourceDir;
-  const themeSourcePath = path.join(ROOT_DIR, themeSourceDir);
+  const themeSourceName = args[0];
+  const themeName = args[1] || themeSourceName;
+  const themeSourcePath = path.join(SRC_DIR, themeSourceName);
   const outDir = path.join(themeSourcePath, "out");
 
-  log(`\n🚀 Convertendo tema: ${themeSourceDir} → ${themeName}\n`, "cyan");
+  log(`🚀 Tema: ${themeSourceName} → ${themeName}\n`, "cyan");
 
-  // Verifica se o diretório existe
+  // Verifica se o diretório existe em src/
   if (!fs.existsSync(themeSourcePath)) {
-    log(`❌ Diretório não encontrado: ${themeSourcePath}`, "red");
+    log(`❌ Tema não encontrado: ${themeSourcePath}`, "red");
+    log(`   Os temas devem estar na pasta src/`, "yellow");
     process.exit(1);
   }
 
@@ -452,6 +512,7 @@ async function main() {
   // Verifica se o build foi gerado
   if (!fs.existsSync(outDir)) {
     log(`❌ Build não encontrado em ${outDir}`, "red");
+    log(`   Certifique-se de que next.config tem output: "export"`, "yellow");
     process.exit(1);
   }
 
@@ -506,8 +567,10 @@ async function main() {
   }
 
   // Resumo
-  log("\n✅ Tema gerado com sucesso!", "green");
-  log(`📂 Local: ${themeDir}`, "cyan");
+  log("\n" + "═".repeat(50), "green");
+  log("✅ Tema gerado com sucesso!", "green");
+  log("═".repeat(50), "green");
+  log(`\n📂 Output: ${themeDir}`, "cyan");
   log("\n📝 Próximos passos:", "yellow");
   log("   1. docker-compose restart keycloak", "reset");
   log(`   2. Selecione "${themeName}" no Keycloak Admin\n`, "reset");

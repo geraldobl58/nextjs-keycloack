@@ -6,18 +6,20 @@ Sistema para criar temas Keycloak customizados usando **Next.js + Tailwind CSS**
 
 ```
 keycloack/
-├── nextjs-keycloak-theme/     # Tema padrão (exemplo)
-│   ├── src/components/        # Componentes React
-│   └── package.json
-├── my-corporate-theme/        # Seu novo tema (exemplo)
-│   └── ...
-├── themes/                    # Temas compilados (para Keycloak)
+├── src/                           # 📂 Temas Next.js (código fonte)
+│   ├── nextjs-keycloak-theme/     # Tema padrão
+│   │   ├── src/components/        # Componentes React
+│   │   └── package.json
+│   └── my-new-theme/              # Outro tema
+│       └── ...
+├── themes/                        # 📦 Temas compilados (Keycloak)
 │   ├── custom-theme/
-│   └── my-corporate-theme/
+│   └── my-new-theme/
 ├── scripts/
-│   └── convert-theme.js       # Script de conversão (global)
-├── docker-compose.yml         # Keycloak + PostgreSQL
-└── package.json               # Scripts globais
+│   ├── convert-theme.js           # Script de conversão
+│   └── watch-theme.js             # Watch mode
+├── docker-compose.yml             # Keycloak + PostgreSQL
+└── package.json                   # Scripts globais
 ```
 
 ## 🚀 Quick Start
@@ -31,12 +33,18 @@ docker-compose up -d
 - **URL:** http://localhost:8080
 - **Admin:** admin / admin123
 
-### 2. Desenvolver o Tema Existente
+### 2. Desenvolver um Tema
 
 ```bash
-cd nextjs-keycloak-theme
+# Entrar na pasta do tema
+cd src/nextjs-keycloak-theme
 npm install
+
+# Desenvolvimento (visualizar no browser)
 npm run dev
+
+# Desenvolvimento com watch (gera tema a cada mudança)
+npm run dev:theme
 ```
 
 Acesse http://localhost:3000 para visualizar.
@@ -45,11 +53,11 @@ Acesse http://localhost:3000 para visualizar.
 
 ```bash
 # Da raiz do projeto
-npm run convert:default
+npm run convert nextjs-keycloak-theme custom-theme
 
 # Ou dentro do tema
-cd nextjs-keycloak-theme
-npm run build:theme  # Executa o script global
+cd src/nextjs-keycloak-theme
+npm run build:theme
 ```
 
 ### 4. Aplicar no Keycloak
@@ -67,8 +75,11 @@ No Admin Console → Realm Settings → Themes → Login Theme → Selecione o t
 ### Passo 1: Criar Projeto Next.js
 
 ```bash
-# Na raiz do projeto
-npx create-next-app@latest my-new-theme
+# Navegar para pasta src
+cd src
+
+# Criar novo projeto
+npx create-next-app@latest meu-tema
 
 # Responda às perguntas:
 # ✔ TypeScript? Yes
@@ -79,10 +90,11 @@ npx create-next-app@latest my-new-theme
 # ✔ Import alias? @/*
 ```
 
-### Passo 2: Configurar next.config.js
+### Passo 2: Configurar next.config
 
-```javascript
-/** @type {import('next').NextConfig} */
+Edite `next.config.ts` (ou `.js`):
+
+```typescript
 const nextConfig = {
   output: "export",
   images: {
@@ -93,7 +105,24 @@ const nextConfig = {
 export default nextConfig;
 ```
 
-### Passo 3: Criar Componente de Login
+### Passo 3: Adicionar Scripts
+
+Edite `package.json`:
+
+```json
+{
+  "scripts": {
+    "dev": "rm -rf out && next dev",
+    "dev:theme": "cd ../.. && npm run watch meu-tema",
+    "build": "next build",
+    "build:theme": "cd ../.. && npm run convert meu-tema",
+    "start": "next start",
+    "lint": "next lint"
+  }
+}
+```
+
+### Passo 4: Criar Componente de Login
 
 Crie `src/components/LoginForm.tsx`:
 
@@ -111,8 +140,8 @@ export default function LoginForm() {
       <div className="bg-slate-800 rounded-2xl shadow-xl p-8">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">🚀 My Theme</h1>
-          <p className="text-slate-400">Sign in to continue</p>
+          <h1 className="text-3xl font-bold text-white mb-2">🚀 Meu Tema</h1>
+          <p className="text-slate-400">Entre para continuar</p>
         </div>
 
         {/* Form */}
@@ -122,7 +151,7 @@ export default function LoginForm() {
               htmlFor="username"
               className="block text-sm text-slate-300 mb-2"
             >
-              Username or Email
+              Username ou Email
             </label>
             <input
               type="text"
@@ -131,7 +160,7 @@ export default function LoginForm() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white"
-              placeholder="Enter your username"
+              placeholder="Digite seu username"
             />
           </div>
 
@@ -140,7 +169,7 @@ export default function LoginForm() {
               htmlFor="password"
               className="block text-sm text-slate-300 mb-2"
             >
-              Password
+              Senha
             </label>
             <input
               type="password"
@@ -149,17 +178,17 @@ export default function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white"
-              placeholder="Enter your password"
+              placeholder="Digite sua senha"
             />
           </div>
 
           <div className="flex items-center justify-between text-sm">
             <label className="flex items-center text-slate-300">
               <input type="checkbox" className="mr-2" />
-              Remember me
+              Lembrar de mim
             </label>
             <a href="#forgot-password" className="text-indigo-400">
-              Forgot password?
+              Esqueceu a senha?
             </a>
           </div>
 
@@ -167,14 +196,14 @@ export default function LoginForm() {
             type="submit"
             className="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-semibold rounded-lg"
           >
-            Sign In
+            Entrar
           </button>
         </form>
 
         <div className="mt-6 text-center text-sm">
-          <span className="text-slate-400">No account? </span>
+          <span className="text-slate-400">Sem conta? </span>
           <a href="#register" className="text-indigo-400">
-            Create one
+            Criar uma
           </a>
         </div>
       </div>
@@ -183,7 +212,7 @@ export default function LoginForm() {
 }
 ```
 
-### Passo 4: Usar o Componente
+### Passo 5: Usar o Componente
 
 Em `src/app/page.tsx`:
 
@@ -199,34 +228,25 @@ export default function Home() {
 }
 ```
 
-### Passo 5: Desenvolver
+### Passo 6: Desenvolver e Converter
 
 ```bash
-cd my-new-theme
+# Desenvolvimento
+cd src/meu-tema
 npm run dev
-```
 
-### Passo 6: Converter para Keycloak
+# Converter para Keycloak
+npm run build:theme
 
-```bash
-# Da raiz do projeto
-npm run convert my-new-theme my-new-theme
-
-# Ou diretamente
-node scripts/convert-theme.js my-new-theme my-new-theme
-```
-
-### Passo 7: Testar
-
-```bash
-docker-compose restart keycloak
+# Ou da raiz
+npm run convert meu-tema
 ```
 
 ---
 
 ## ⚠️ Regras Importantes para o Componente
 
-Para que a conversão funcione corretamente, siga estas regras:
+Para que a conversão funcione corretamente:
 
 ### IDs Obrigatórios
 
@@ -248,10 +268,10 @@ Para que a conversão funcione corretamente, siga estas regras:
 
 ```html
 <!-- Link de registro DEVE ter href="#register" -->
-<a href="#register">Create one</a>
+<a href="#register">Criar conta</a>
 
 <!-- Link esqueci senha DEVE ter href="#forgot-password" -->
-<a href="#forgot-password">Forgot password?</a>
+<a href="#forgot-password">Esqueci minha senha</a>
 ```
 
 ### Container Principal
@@ -268,7 +288,7 @@ Para que a conversão funcione corretamente, siga estas regras:
 <p>Don't have an account?</p>
 
 // ✅ Correto
-<p>No account?</p>
+<p>Sem conta?</p>
 // ou
 <p>Don&apos;t have an account?</p>
 ```
@@ -279,18 +299,19 @@ Para que a conversão funcione corretamente, siga estas regras:
 
 ### Na Raiz (`/keycloack`)
 
-| Comando                          | Descrição                           |
-| -------------------------------- | ----------------------------------- |
-| `npm run convert <pasta> [nome]` | Converte tema Next.js para Keycloak |
-| `npm run convert:default`        | Converte o tema padrão              |
+| Comando                           | Descrição                         |
+| --------------------------------- | --------------------------------- |
+| `npm run convert <tema> [output]` | Converte tema para Keycloak       |
+| `npm run watch <tema> [output]`   | Watch mode com rebuild automático |
 
-### Em Cada Tema (`/<nome-do-tema>`)
+### Em Cada Tema (`/src/<nome-do-tema>`)
 
-| Comando               | Descrição                          |
-| --------------------- | ---------------------------------- |
-| `npm run dev`         | Servidor de desenvolvimento        |
-| `npm run build`       | Build do Next.js                   |
-| `npm run build:theme` | Executa script global de conversão |
+| Comando               | Descrição                   |
+| --------------------- | --------------------------- |
+| `npm run dev`         | Servidor de desenvolvimento |
+| `npm run dev:theme`   | Watch mode com conversão    |
+| `npm run build`       | Build do Next.js            |
+| `npm run build:theme` | Converte para Keycloak      |
 
 ---
 
@@ -328,9 +349,7 @@ KC_SPI_THEME_CACHE_TEMPLATES: "false"
 ### Erro: EPERM operation not permitted
 
 ```bash
-# Feche o terminal e abra novamente, depois:
-cd /caminho/do/projeto
-npm run dev
+# Feche o terminal e abra novamente
 ```
 
 ### Erro: Apóstrofo não escapado
@@ -355,13 +374,22 @@ npm install
 npm run build
 ```
 
+### Container principal não encontrado
+
+Certifique-se de que seu componente tem um div com `className="... max-w-md ..."`:
+
+```tsx
+<div className="w-full max-w-md">{/* seu conteúdo */}</div>
+```
+
 ---
 
 ## 📋 Temas Disponíveis
 
-| Tema           | Pasta Fonte             | Descrição           |
-| -------------- | ----------------------- | ------------------- |
-| `custom-theme` | `nextjs-keycloak-theme` | Tema padrão moderno |
+| Tema           | Pasta Fonte                 | Output                |
+| -------------- | --------------------------- | --------------------- |
+| `custom-theme` | `src/nextjs-keycloak-theme` | `themes/custom-theme` |
+| `my-new-theme` | `src/my-new-theme`          | `themes/my-new-theme` |
 
 ---
 

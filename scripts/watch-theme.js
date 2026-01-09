@@ -24,6 +24,7 @@ const __dirname = path.dirname(__filename);
 // CONFIGURAÇÕES
 // ==========================================
 const ROOT_DIR = path.resolve(__dirname, "..");
+const SRC_DIR = path.join(ROOT_DIR, "src");
 const DEBOUNCE_MS = 1000;
 
 // ==========================================
@@ -54,27 +55,44 @@ if (args.length === 0) {
 ${colors.cyan}Keycloak Theme Watcher${colors.reset}
 
 Uso:
-  node scripts/watch-theme.js <pasta-do-tema-nextjs> [nome-do-tema]
+  node scripts/watch-theme.js <nome-do-tema> [nome-output]
+
+Os temas devem estar na pasta src/
 
 Exemplo:
   node scripts/watch-theme.js nextjs-keycloak-theme custom-theme
   node scripts/watch-theme.js my-new-theme
 `);
+
+  if (fs.existsSync(SRC_DIR)) {
+    const themes = fs
+      .readdirSync(SRC_DIR, { withFileTypes: true })
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+
+    if (themes.length > 0) {
+      console.log(`${colors.cyan}Temas disponíveis em src/:${colors.reset}`);
+      themes.forEach((t) => console.log(`   • ${t}`));
+      console.log();
+    }
+  }
+
   process.exit(1);
 }
 
 const themeFolder = args[0];
 const themeName = args[1] || themeFolder;
-const themePath = path.join(ROOT_DIR, themeFolder);
+const themePath = path.join(SRC_DIR, themeFolder);
 
 if (!fs.existsSync(themePath)) {
-  log(`❌ Pasta não encontrada: ${themePath}`, "red");
+  log(`❌ Tema não encontrado: ${themePath}`, "red");
+  log(`   Os temas devem estar na pasta src/`, "yellow");
   process.exit(1);
 }
 
-const srcPath = path.join(themePath, "src");
-if (!fs.existsSync(srcPath)) {
-  log(`❌ Pasta src não encontrada: ${srcPath}`, "red");
+const themeSrcPath = path.join(themePath, "src");
+if (!fs.existsSync(themeSrcPath)) {
+  log(`❌ Pasta src não encontrada: ${themeSrcPath}`, "red");
   process.exit(1);
 }
 
@@ -163,7 +181,7 @@ ${colors.magenta}╔════════════════════
 
 ${colors.cyan}Tema:${colors.reset}   ${themeName}
 ${colors.cyan}Pasta:${colors.reset}  ${themePath}
-${colors.cyan}Watch:${colors.reset}  ${srcPath}
+${colors.cyan}Watch:${colors.reset}  ${themeSrcPath}
 
 ${colors.yellow}Aguardando mudanças...${colors.reset}
 ${colors.blue}Pressione Ctrl+C para parar${colors.reset}
@@ -173,7 +191,7 @@ ${colors.blue}Pressione Ctrl+C para parar${colors.reset}
 rebuild();
 
 // Inicia o watcher
-const watcher = watchDirectory(srcPath);
+const watcher = watchDirectory(themeSrcPath);
 
 // Cleanup ao sair
 process.on("SIGINT", () => {
