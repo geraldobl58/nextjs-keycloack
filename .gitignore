@@ -1,0 +1,32 @@
+# Arquivos de ambiente
+.env
+.env.local
+.env.*.local
+
+# Dependências
+**/node_modules/
+
+# Next.js build
+**/.next/
+**/out/
+
+# Temas compilados (gerados automaticamente)
+themes/*/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Cache
+.cache/
+*.tsbuildinfo
